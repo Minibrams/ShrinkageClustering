@@ -42,7 +42,7 @@ def progress(current, max):
     number of steps.
     """
     prog = int(20 * (current / max))
-    print(f"[{''.join('=' for _ in range(prog))}:{''.join(' ' for _ in range(20 - prog - 1))}] ({(current / max) * 100 : 2.2f}%)", end='\r')
+    print(f"[{''.join('=' for _ in range(prog))}>{''.join(' ' for _ in range(20 - prog - 1))}] ({(current / max) * 100 : 2.2f}%)", end='\r')
 
 
 def plot(points, A, k): 
@@ -104,7 +104,8 @@ def cluster(S, k=None, max_iter=100, visualize=False, points=None):
         A[X] = np.zeros((k))
         A[X][C] = 1
 
-        progress(_i, max_iter)
+        if _i % 10 == 0: 
+            progress(_i, max_iter)
         
         if visualize: 
             plot(points, A, k)
@@ -120,7 +121,7 @@ def square(S):
         [0  0  0  0]       [0  3  2  4]
         [3  0  0  0]  -->  [3  0  3  1]
         [2  3  0  0]       [2  3  0  5]
-        [4  0  0  0]       [4  1  5  0]
+        [4  1  5  0]       [4  1  5  0]
     ]
     """
     full = S.T + S
@@ -163,9 +164,18 @@ def similarity_matrix(P, similarity_measure):
 def demo(): 
     print(f'Reading...')
     points = read_points('data/clusters')
+    shuffle(points)
     print(f'Calculating similarity matrix...')
     S = similarity_matrix(points, similarity_measure=euclidean_distance)
     print(f'Clustering...')
-    A = cluster(S, k=10, max_iter=1000, visualize=True, points=points)
+    A = cluster(S, k=10, max_iter=5000)
+
+    # Visualise
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    labels = [np.argmax(p) for p in A]
+    xs, ys = zip(*points)
+    ax.scatter(xs, ys, c=labels)
+    plt.show()
 
 demo()
