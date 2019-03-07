@@ -26,7 +26,11 @@ def random_cluster_matrix(shape):
     return A
 
 
-def cluster(S, k=None): 
+def remove_clusters(A, cluster_indeces): 
+    return np.delete(A, cluster_indeces, axis=1)
+
+
+def cluster(S, k=None, max_iter=100): 
     """
     Uses Shrinkage clustering to provide a cluster assignments matrix given a 
     similarity matrix S. 
@@ -34,14 +38,36 @@ def cluster(S, k=None):
     param k: Initial number of clusters. Will be reduced as the algorithm runs, 
              so start high.
     """
-    if not k: 
-        k = len(S)
-
     N = len(S)
+    if not k: 
+        k = N
 
+    S_bar = 1 - 2 * S
     A = random_cluster_matrix((N, k))
 
-    print(A)
+    for _i in range(max_iter): 
+        # Remove empty clusters
+        empty_columns = [i for i, c in enumerate(A.T) if sum(c) == 0]
+        A = remove_clusters(A, empty_columns)
+        k = len(A[0]) # Adjust number of clusters
 
+        # Permute cluster memberships:
+        # (a) Compute M = ~SA
+        M = S_bar @ A
 
-cluster(np.zeros((10, 10)), k=5)
+        # (b) Compute v
+        MA = np.multiply(M, A)
+        v = [min([M[i][j] for j in range(k)]) - sum([MA[i][j] for j in range(k)]) for i in range(N)]
+
+        # (c) Find the object X with the greatest optimization potential
+        X = np.argmin(v)
+
+        # (d) Reassign X to the cluster C where C = argmin(M[X][j]) w.r.t. j
+        C = np.argmin([M[X][j] for j in range(k)])
+        prev = A[X][C]
+        A[X] = np.zeros((k))
+        A[X][C] = 1
+
+    return A
+
+cluster(np.random.random((10, 10)), k=5)
