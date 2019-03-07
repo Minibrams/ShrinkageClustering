@@ -33,6 +33,13 @@ def remove_clusters(A, cluster_indeces):
     return np.delete(A, cluster_indeces, axis=1)
 
 
+def progress(current, max): 
+    prog = int(20 * (current / max))
+    print(f"[{''.join('=' for _ in range(prog))}>{''.join(' ' for _ in range(20 - prog - 1))}] ({(current / max) * 100 : 2.2f}%)", end='\r')
+
+
+
+
 def cluster(S, k=None, max_iter=100): 
     """
     Uses Shrinkage clustering to provide a cluster assignments matrix given a 
@@ -74,6 +81,7 @@ def cluster(S, k=None, max_iter=100):
         C = np.argmin([M[X][j] for j in range(k)])
         A[X] = np.zeros((k))
         A[X][C] = 1
+        progress(_i, max_iter)
 
     return A
 
@@ -99,8 +107,8 @@ def read_points(from_file):
     points = []
     with open(from_file) as fp: 
         for line in fp.readlines(): 
-            x, y, _ = line.strip().split()
-            points.append((int(x), int(y)))
+            feats = line.strip().split()
+            points.append((int(feats[0]), int(feats[1])))
 
     return points
 
@@ -120,15 +128,17 @@ def similarity_matrix(P):
 
 
 def test(): 
-    points = read_points('data/clusters')
+    print(f'Reading...')
+    points = read_points('data/synth')
+    print(f'Calculating similarity matrix...')
     S = similarity_matrix(points)
-    A = cluster(S, 10, max_iter=525)
+    print(f'Clustering...')
+    A = cluster(S, k=50, max_iter=5000)
 
     # Visualise
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     labels = [np.argmax(p) for p in A]
-    print(labels)
     xs, ys = zip(*points)
     ax.scatter(xs, ys, c=labels)
     plt.show()
