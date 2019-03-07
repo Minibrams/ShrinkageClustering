@@ -5,5 +5,7 @@ Data
 ----
 A small test data file can be found in `data/clusters`. It contains 600 points (x, y) assigned to three clusters. 
 The clusters are formed as seen below: 
-![Alt text](/misc/clusters.png?raw=true)
 In the file, every line contains three integers (x, y, assigned cluster number). 
+
+![Provided cluster data](/misc/clusters.png?raw=true)
+
