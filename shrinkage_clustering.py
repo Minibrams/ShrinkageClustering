@@ -1,6 +1,9 @@
 import numpy as np 
-from math import sqrt
-from random import randint
+from math import sqrt, isclose
+from random import randint, shuffle
+import matplotlib.pyplot as plt     
+import matplotlib.animation as animation             
+
 
 def euclidean_distance(x, y): 
     """
@@ -56,18 +59,82 @@ def cluster(S, k=None, max_iter=100):
         M = S_bar @ A
 
         # (b) Compute v
-        MA = np.multiply(M, A)
-        v = [min([M[i][j] for j in range(k)]) - sum([MA[i][j] for j in range(k)]) for i in range(N)]
+        MoA = np.multiply(M, A)
+        #v = [min([M[i][j] - sum([MoA[i][j]]) for j in range(k)]) for i in range(N)]
+        v = [min([M[i][j] for j in range(k)]) - sum([MoA[i][j] for j in range(k)]) for i in range(N)]
+
+        # Check if we converged
+        if isclose(sum(v), 0, abs_tol=1e-5): 
+            break
 
         # (c) Find the object X with the greatest optimization potential
         X = np.argmin(v)
 
         # (d) Reassign X to the cluster C where C = argmin(M[X][j]) w.r.t. j
         C = np.argmin([M[X][j] for j in range(k)])
-        prev = A[X][C]
         A[X] = np.zeros((k))
         A[X][C] = 1
 
     return A
 
-cluster(np.random.random((10, 10)), k=5)
+
+def square(S):
+    """
+    Converts a triangular matrix into a full square matrix. 
+    Example: 
+    [
+        [0  0  0  0]       [0  3  2  4]
+        [3  0  0  0]  -->  [3  0  3  1]
+        [2  3  0  0]       [2  3  0  5]
+        [4  0  0  0]       [4  1  5  0]
+    ]
+    """
+    full = S.T + S
+    idx = np.arange(S.shape[0])
+    full[idx,idx] = S[idx,idx]
+    return full 
+
+
+def read_points(from_file): 
+    points = []
+    with open(from_file) as fp: 
+        for line in fp.readlines(): 
+            x, y, _ = line.strip().split()
+            points.append((int(x), int(y)))
+
+    return points
+
+
+def similarity_matrix(P):
+    N = len(P) 
+    S = np.zeros((N, N))
+    for i in range(N): 
+        for j in range(i): 
+            S[i][j] = euclidean_distance(P[i], P[j])
+
+    S = square(S)
+    S = S / np.max(S)
+    S = 1 - S # Higher value = more similar
+
+    return S
+
+
+def test(): 
+    points = read_points('data/clusters')
+    S = similarity_matrix(points)
+    A = cluster(S, 10, max_iter=525)
+
+    # Visualise
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    labels = [np.argmax(p) for p in A]
+    print(labels)
+    xs, ys = zip(*points)
+    ax.scatter(xs, ys, c=labels)
+    plt.show()
+
+
+
+# cluster(np.random.random((10, 10)), k=5)
+test()
+
