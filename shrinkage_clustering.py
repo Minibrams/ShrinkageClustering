@@ -108,7 +108,7 @@ def cluster(S, k=None, max_iter=100, visualize=False, points=None):
             progress(_i, max_iter)
         
         if visualize: 
-            plot(points, A, k)
+            plot(points, A, k)        
 
     return A
 
@@ -143,10 +143,17 @@ def read_points(from_file):
     return points
 
 
-def similarity_matrix(P, similarity_measure):
+def similarity_matrix(P, similarity_measure, normalize=True, inverse=True):
     """
     Builds a similarity matrix over a set of elements
     using the provided similarity measure. 
+    
+    param P: List of data points. 
+    param similarity_measure: Binary function for determining 
+                              the similariy between two points.
+    param normalize: Normalize all points in the matrix to [1,0]
+    param inverse: Invert the values in the (normalized) matrix, 
+                   i.e. returns 1 - M.
     """
     N = len(P) 
     S = np.zeros((N, N))
@@ -155,11 +162,28 @@ def similarity_matrix(P, similarity_measure):
             S[i][j] = similarity_measure(P[i], P[j])
 
     S = square(S)
-    S = S / np.max(S)
-    S = 1 - S  # Higher value = more similar
+    if normalize: 
+        S = S / np.max(S)
+    if inverse:
+        S = 1 - S  # Higher value = more similar
 
     return S
 
+
+def cluster_shrinkage_clustering(from_file): 
+    """
+    Wrapper for cluster() that outputs data as 
+    (xs, ys, labels) so it can be fed easily to a 
+    matplotlib scatterplot.
+    """
+    points = read_points('data/clusters')
+    shuffle(points)
+    S = similarity_matrix(points, similarity_measure=euclidean_distance)
+    A = cluster(S, k=10, max_iter=1000)
+    labels = [np.argmax(p) for p in A]
+    xs, ys = zip(*points)
+    
+    return xs, ys, labels
 
 def demo(): 
     print(f'Reading...')
@@ -168,7 +192,7 @@ def demo():
     print(f'Calculating similarity matrix...')
     S = similarity_matrix(points, similarity_measure=euclidean_distance)
     print(f'Clustering...')
-    A = cluster(S, k=10, max_iter=5000)
+    A = cluster(S, k=10, max_iter=1000)
 
     # Visualise
     fig = plt.figure()
@@ -177,5 +201,3 @@ def demo():
     xs, ys = zip(*points)
     ax.scatter(xs, ys, c=labels)
     plt.show()
-
-demo()
