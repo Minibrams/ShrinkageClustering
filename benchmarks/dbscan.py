@@ -25,4 +25,4 @@ def cluster_dbscan(from_file):
 
 
 
-cluster_dbscan(os.path.dirname(__file__) + '/../data/clusters')
+#cluster_dbscan(os.path.dirname(__file__) + '/../data/boomerang_and_circle')

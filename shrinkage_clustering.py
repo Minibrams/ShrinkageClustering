@@ -80,7 +80,7 @@ def cluster(S, k=None, max_iter=100, visualize=False, points=None):
 
     for _i in range(max_iter): 
         # Remove empty clusters
-        empty_columns = [i for i, c in enumerate(A.T) if sum(c) == 0]
+        empty_columns = [i for i in range(k) if sum(A[:,i]) == 0]
         A = remove_clusters(A, empty_columns)
         k = len(A[0])  # Adjust number of clusters
 
@@ -89,8 +89,8 @@ def cluster(S, k=None, max_iter=100, visualize=False, points=None):
         M = S_bar @ A
 
         # (b) Compute v
-        MoA = np.multiply(M, A)
-        v = [min([M[i][j] for j in range(k)]) - sum([MoA[i][j] for j in range(k)]) for i in range(N)]
+        MoA = M * A
+        v = [min(M[i]) - sum(MoA[i]) for i in range(N)]
 
         # Check if we converged
         if isclose(sum(v), 0, abs_tol=1e-5): 
@@ -100,7 +100,7 @@ def cluster(S, k=None, max_iter=100, visualize=False, points=None):
         X = np.argmin(v)
 
         # (d) Reassign X to the cluster C where C = argmin(M[X][j]) w.r.t. j
-        C = np.argmin([M[X][j] for j in range(k)])
+        C = np.argmin(M[X])
         A[X] = np.zeros((k))
         A[X][C] = 1
 
@@ -176,7 +176,7 @@ def cluster_shrinkage_clustering(from_file):
     (xs, ys, labels) so it can be fed easily to a 
     matplotlib scatterplot.
     """
-    points = read_points('data/clusters')
+    points = read_points(from_file)
     shuffle(points)
     S = similarity_matrix(points, similarity_measure=euclidean_distance)
     A = cluster(S, k=10, max_iter=1000)
